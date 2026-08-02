@@ -86,7 +86,7 @@
   .btn-coral{ background: var(--coral); color: #fff; }
   .btn-coral:hover{ background: var(--coral-deep); transform: translateY(-2px); }
 
-  section.panel{ display: none; padding: 60px 0 90px; }
+  section.panel{ display: none; padding: 30px 0 90px; }
   section.panel.active{ display: block; }
 
   /* home */
@@ -426,12 +426,45 @@
 </div>
 
 <script>
-  function showTab(name){
+  // Always start at the top of the page on a fresh load/refresh,
+  // instead of the browser restoring the previous scroll position.
+  if ('scrollRestoration' in history) { history.scrollRestoration = 'manual'; }
+  window.scrollTo(0,0);
+
+  let onHomeEntry = true;
+  function safeHistory(method, state){
+    // history.pushState/replaceState can throw (e.g. a SecurityError when the
+    // page is opened as a local file:// path instead of served over http).
+    // Never let that take down the rest of the page's scripts.
+    try { history[method](state, '', location.pathname + location.search); }
+    catch (e) { /* back/forward tab tracking is a nice-to-have, not required */ }
+  }
+  safeHistory('replaceState', {tab:'home'});
+
+  function showTab(name, fromPopState){
     document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === name));
     document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     window.scrollTo(0,0);
     if (name === 'home') updateBannerAlignment();
+
+    if (!fromPopState){
+      if (name === 'home'){
+        if (!onHomeEntry){ safeHistory('pushState', {tab:'home'}); onHomeEntry = true; }
+      } else if (onHomeEntry){
+        safeHistory('pushState', {tab:name});
+        onHomeEntry = false;
+      } else {
+        safeHistory('replaceState', {tab:name});
+      }
+    }
   }
+
+  // Pressing the browser "back" button while away from Home returns to Home.
+  window.addEventListener('popstate', () => {
+    onHomeEntry = true;
+    showTab('home', true);
+  });
+
   document.querySelectorAll('nav button').forEach(b => {
     b.addEventListener('click', () => showTab(b.dataset.tab));
   });
