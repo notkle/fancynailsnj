@@ -105,8 +105,44 @@
        rather than being clipped itself, so the shadow still shows. */
     transition: transform 0.3s ease, filter 0.3s ease;
     transform: translateY(-5px);
-    filter: drop-shadow(0 28px 42px rgba(31,58,61,0.32));
+    filter: drop-shadow(0 0px 21px rgba(31,58,61,0.32));
   }
+  /* Staggered load-in: gated behind .intro rather than applied
+     unconditionally. Toggling display:none <-> block on the parent
+     .panel doesn't reliably restart a running/finished CSS animation
+     across browsers, so instead JS adds/removes this class (with a
+     forced reflow in between) every time the home tab is shown —
+     see showTab() — which guarantees a clean replay every time. */
+  .hero.intro,
+  .hero.intro .welcome,
+  .hero.intro h1,
+  .hero.intro .lede,
+  .hero.intro .hero-cta {
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .hero.intro{ animation: heroCardIn 0.4s ease-out 0ms forwards; }
+  @keyframes heroCardIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to   { opacity: 1; transform: translateY(-5px); }
+  }
+  @keyframes heroItemIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .hero.intro .welcome,
+  .hero.intro h1,
+  .hero.intro .lede,
+  .hero.intro .hero-cta {
+    animation-name: heroItemIn;
+    animation-duration: 0.4s;
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards;
+  }
+  .hero.intro .welcome{ animation-delay: 150ms; }
+  .hero.intro h1{ animation-delay: 300ms; }
+  .hero.intro .lede,
+  .hero.intro .hero-cta{ animation-delay: 450ms; }
   /* Mobile-safe parallax: instead of background-attachment:fixed (which
      glitches/jitters on iOS Safari), we use an oversized ::before layer
      that's translated via a CSS custom property updated from JS with
@@ -144,7 +180,7 @@
        why this uses filter:drop-shadow rather than box-shadow. */
     transition: transform 0.3s ease, filter 0.3s ease;
     transform: translateY(-5px);
-    filter: drop-shadow(0 28px 42px rgba(31,58,61,0.32));
+    filter: drop-shadow(0 0px 21px rgba(31,58,61,0.32));
   }
   /* Same mobile-safe parallax technique as .hero; the actual image for
      each page banner instance is supplied via the --banner-img custom
@@ -246,6 +282,15 @@
   @media (prefers-reduced-motion: reduce){
     section.panel.active{ animation: simpleFadeIn 0.5s ease-out; }
     .blob-1, .blob-2{ animation: none; }
+    .hero,
+    .hero .welcome,
+    .hero h1,
+    .hero .lede,
+    .hero.intro,
+    .hero.intro .welcome,
+    .hero.intro h1,
+    .hero.intro .lede,
+    .hero.intro .hero-cta{ animation: none; opacity: 1; }
   }
 
   /* welcome header styling */
@@ -361,11 +406,11 @@
 
   <!-- HOME -->
   <section id="home" class="panel active">
-    <div class="hero">
+    <div class="hero intro">
       <p class="welcome" >Welcome to Fancy Nails, how may we help you?</p>
       <h1  >Exhale. Then polish.</h1>
       <p class="lede" >Fancy Nails is a calm, considered nail salon — manicures, pedicures, and enhancements, done properly and without the rush.</p>
-      <div  >
+      <div class="hero-cta">
         <button class="btn btn-primary" onclick="showTab('contact')">Book an appointment</button>
         <button class="btn" style="background:none;color:var(--ink-soft);" onclick="showTab('prices')">See prices</button>
       </div>
@@ -490,6 +535,7 @@
     catch (e) { /* back/forward tab tracking is a nice-to-have, not required */ }
   }
   safeHistory('replaceState', {tab:'home'});
+  var homeIntroPlayed = false;
 
   function showTab(name, fromPopState){
     document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === name));
@@ -497,6 +543,33 @@
     window.scrollTo(0,0);
     if (name === 'home') updateBannerAlignment();
     updateParallax();
+
+    if (name === 'home'){
+      // The very first time home is shown (initial page load), let the
+      // .intro class already in the markup animate in on its own — the
+      // browser times that against its own paint cycle, which is more
+      // reliable than anything we can do from JS while the page is still
+      // busy loading. Only on later returns to this tab (after we've left
+      // it) do we force a restart: toggling display:none <-> block on
+      // .panel doesn't reliably restart a finished CSS animation across
+      // browsers, so we drop the class, force a reflow, then re-add it.
+      if (homeIntroPlayed){
+        var hero = document.querySelector('#home .hero');
+        if (hero){
+          hero.classList.remove('intro');
+          void hero.offsetWidth; // force reflow
+          // A single rAF can occasionally get coalesced into the same
+          // frame as the reflow above (browser-dependent), skipping the
+          // restart — hence why only the very first swap-back was flaky.
+          // Nesting two rAFs guarantees an actual painted "no-intro" frame
+          // happens before we re-add the class.
+          requestAnimationFrame(function(){
+            requestAnimationFrame(function(){ hero.classList.add('intro'); });
+          });
+        }
+      }
+      homeIntroPlayed = true;
+    }
 
     if (!fromPopState){
       if (name === 'home'){
