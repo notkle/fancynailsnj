@@ -29,6 +29,14 @@
     background: linear-gradient(#F6FBF9, #F6FBF9);
   }
   *, *::before, *::after{ box-sizing: border-box; }
+  /* Tab swaps force-scroll to the top (see showTab in JS), but the browser's
+     default scroll-anchoring feature will silently shift scroll position
+     back to compensate for layout shifts elsewhere on the page (images
+     loading, banner intro animations replaying, etc.) — from the user's
+     perspective it looks like the old scroll position "survived" the swap.
+     Disabling anchoring here on the two ancestors of the actual scrolling
+     element removes that fight entirely. */
+  html, body{ overflow-anchor: none; }
   body{
     margin: 0;
     background: linear-gradient(var(--bg), var(--bg));
@@ -764,6 +772,12 @@
     document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === name));
     document.querySelectorAll('nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
     window.scrollTo(0,0);
+    // Belt-and-suspenders: some of what follows (banner intro replays,
+    // image loads, alignment recalculation) can shift page height on the
+    // next frame or two, and browsers may nudge scroll position to
+    // compensate. Re-assert the reset after paint so a tab swap always
+    // lands at the very top, even if something below took a frame to settle.
+    requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0,0)));
     if (name === 'home') updateBannerAlignment();
     updateParallax();
 
