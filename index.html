@@ -243,7 +243,7 @@
     z-index: -1;
     pointer-events: none;
   }
-  /* Toggled from JS on every tab entry (see nudgeBannerLayer in the
+  /* Toggled from JS on every tab entry (see replayBannerEntrance in the
      script below). ::before is where the actual banner photo lives, and
      it carries a permanent will-change:transform for smooth parallax —
      but that same standing compositing hint is what lets WebKit reuse a
@@ -408,6 +408,19 @@
        rock's width in the photo) — desktop/tablet and the Prices/Contact
        banners are unaffected */
     .hero::before{ background-position: 58% center; }
+
+    /* Hide the page's vertical scrollbar on mobile — scrolling still
+       works exactly the same, the bar itself just isn't drawn. Desktop
+       keeps its normal scrollbar since this is inside the mobile media
+       query only. */
+    html, body{
+      scrollbar-width: none; /* Firefox */
+      -ms-overflow-style: none; /* old Edge/IE */
+    }
+    html::-webkit-scrollbar, body::-webkit-scrollbar{
+      display: none; /* Chrome/Safari/iOS */
+      width: 0;
+    }
   }
 
   /* photo strip, bottom of the home page */
@@ -625,40 +638,91 @@
   // Contact) since each has its own .page-banner.intro to replay.
   var bannerIntroPlayed = { prices: false, contact: false };
 
-  // Once the whole staggered entrance sequence has genuinely finished,
-  // drop the .intro class so the will-change hint (tied to that class in
-  // CSS) goes away with it. Leaving will-change on indefinitely keeps a
-  // GPU layer parked for as long as the tab stays open — and iOS Safari
-  // can drop a long-parked layer while the tab is backgrounded, then fail
-  // to repaint it correctly on return, leaving a blank/white box. The
-  // fallback CSS (base .hero/.page-banner + children opacity:1,
-  // transform:none) already matches this final animated state exactly,
-  // so removing .intro here causes no visual change or flash — it's a
-  // pure cleanup step. totalMs is the delay of the last-staggered child
-  // plus its own duration, with a small buffer so cleanup never lands
-  // mid-animation.
-  function scheduleIntroCleanup(el, totalMs){
+  // Tracks, per banner element, which "generation" of the entrance
+  // sequence is currently in flight, plus the id of its pending cleanup
+  // timeout. Needed because rapid tab-swapping can start a new
+  // replayBannerEntrance() call on the same element before the previous
+  // call's rAF chain or 900/600ms cleanup timeout has finished — with
+  // nothing tracking that, the stale callback would fire later and
+  // mutate classes (remove .intro, remove .force-repaint) based on
+  // nothing but its own leftover schedule, with no idea a newer replay
+  // had already taken over. That's what caused the blank/white banner to
+  // show up specifically when swapping tabs quickly: leaving a tab was
+  // never actually cancelling the outgoing tab's in-flight work, so it
+  // kept running and could clobber the next tab's animation mid-flight.
+  var bannerGen = new WeakMap();
+  var bannerCleanupTimer = new WeakMap();
+
+  function scheduleIntroCleanup(el, totalMs, isCurrent){
     if (!el) return;
-    window.setTimeout(function(){
+    var t = window.setTimeout(function(){
+      if (!isCurrent()) return; // a newer replay has since taken over — do nothing
       el.classList.remove('intro');
     }, totalMs);
+    bannerCleanupTimer.set(el, t);
   }
 
   // Runs on every single tab entry (not just the first visit) — the
   // blank/white banner bug happens on plain in-page nav, since every tab
   // switch cycles the panel through display:none -> block, and that's
   // enough on its own to sometimes leave the ::before photo layer blank.
-  // Toggling .force-repaint strips will-change from ::before and forces
-  // a reflow, so when the class comes off again WebKit has to promote
-  // and rasterize a genuinely new layer instead of possibly reusing a
-  // stale, blanked-out one.
-  function nudgeBannerLayer(el){
+  // Toggling .force-repaint strips will-change from ::before, forcing
+  // WebKit to promote and rasterize a genuinely new layer rather than
+  // possibly reusing a stale, blanked-out one, once the class is removed.
+  //
+  // The layer nudge and the .intro restart are merged into one
+  // coordinated sequence — one shared reflow, one shared double-rAF gate
+  // — so the layer teardown and the animation restart always land in the
+  // same frame instead of racing across separate ones (see the comment
+  // above bannerGen for the other half of this: cancelling stale
+  // in-flight sequences so they can't race a newer one either).
+  function replayBannerEntrance(el, totalMs, alreadyPlayed){
     if (!el) return;
-    el.classList.add('force-repaint');
-    void el.offsetWidth; // force reflow while will-change is stripped
-    requestAnimationFrame(function(){
-      requestAnimationFrame(function(){ el.classList.remove('force-repaint'); });
-    });
+
+    // Every call is a new "generation." Bumping this immediately means
+    // any rAF callback or cleanup timeout still pending from a previous,
+    // now-superseded call on this same element can recognize it's stale
+    // and bail out instead of mutating classes out from under this call.
+    var myGen = (bannerGen.get(el) || 0) + 1;
+    bannerGen.set(el, myGen);
+    function isCurrent(){ return bannerGen.get(el) === myGen; }
+
+    // Cancel any cleanup timeout left over from a previous, now-stale
+    // call — belt-and-suspenders alongside the generation check, so a
+    // late .intro removal can't fire at all, rather than firing and
+    // relying solely on the isCurrent() check inside it.
+    var pendingTimer = bannerCleanupTimer.get(el);
+    if (pendingTimer) window.clearTimeout(pendingTimer);
+
+    if (alreadyPlayed){
+      el.classList.add('force-repaint');
+      el.classList.remove('intro');
+      void el.offsetWidth; // single forced reflow for both changes above
+      // Nesting two rAFs guarantees an actual painted "neither class"
+      // frame happens before both classes flip back on together.
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          if (!isCurrent()) return; // a newer replay already owns this element
+          el.classList.remove('force-repaint');
+          el.classList.add('intro');
+          scheduleIntroCleanup(el, totalMs, isCurrent);
+        });
+      });
+    } else {
+      // First natural play: .intro is already in the markup and animates
+      // on its own paint cycle, so there's no restart to coordinate with
+      // here — just nudge the ::before layer on its own, then schedule
+      // the will-change cleanup for the entrance animation.
+      el.classList.add('force-repaint');
+      void el.offsetWidth;
+      requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+          if (!isCurrent()) return;
+          el.classList.remove('force-repaint');
+        });
+      });
+      scheduleIntroCleanup(el, totalMs, isCurrent);
+    }
   }
 
   function showTab(name, fromPopState){
@@ -676,31 +740,11 @@
       // busy loading. Only on later returns to this tab (after we've left
       // it) do we force a restart: toggling display:none <-> block on
       // .panel doesn't reliably restart a finished CSS animation across
-      // browsers, so we drop the class, force a reflow, then re-add it.
+      // browsers, so we drop the class, force a reflow, then re-add it —
+      // see replayBannerEntrance for why this is now a single coordinated
+      // sequence rather than two separate ones.
       var hero = document.querySelector('#home .hero');
-      nudgeBannerLayer(hero);
-      if (homeIntroPlayed){
-        if (hero){
-          hero.classList.remove('intro');
-          void hero.offsetWidth; // force reflow
-          // A single rAF can occasionally get coalesced into the same
-          // frame as the reflow above (browser-dependent), skipping the
-          // restart — hence why only the very first swap-back was flaky.
-          // Nesting two rAFs guarantees an actual painted "no-intro" frame
-          // happens before we re-add the class.
-          requestAnimationFrame(function(){
-            requestAnimationFrame(function(){
-              hero.classList.add('intro');
-              scheduleIntroCleanup(hero, 900);
-            });
-          });
-        }
-      } else {
-        // First natural play: the .intro class is already in the markup
-        // and animates on its own paint cycle, so just schedule the
-        // will-change cleanup for it.
-        scheduleIntroCleanup(hero, 900);
-      }
+      replayBannerEntrance(hero, 900, homeIntroPlayed);
       homeIntroPlayed = true;
     }
 
@@ -710,21 +754,7 @@
       // so on every visit after the first we drop .intro, force a
       // reflow, then re-add it on the next paint.
       var banner = document.querySelector('#' + name + ' .page-banner');
-      nudgeBannerLayer(banner);
-      if (bannerIntroPlayed[name]){
-        if (banner){
-          banner.classList.remove('intro');
-          void banner.offsetWidth; // force reflow
-          requestAnimationFrame(function(){
-            requestAnimationFrame(function(){
-              banner.classList.add('intro');
-              scheduleIntroCleanup(banner, 600);
-            });
-          });
-        }
-      } else {
-        scheduleIntroCleanup(banner, 600);
-      }
+      replayBannerEntrance(banner, 600, bannerIntroPlayed[name]);
       bannerIntroPlayed[name] = true;
     }
 
