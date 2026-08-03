@@ -426,21 +426,36 @@
   /* photo strip, bottom of the home page */
   .photo-banner{
     margin-top: 40px;
-    padding: 10px 16px;
+    padding: 10px 24px;
+    box-sizing: border-box;
     border-top: 1px solid var(--line);
     display: flex;
     gap: 10px;
     justify-content: center;
     overflow-x: auto;
     overflow-y: hidden;
+    scroll-padding: 0 24px;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* old Edge/IE */
+    /* break out of .wrap's max-width/padding so the strip spans the
+       full viewport edge-to-edge, regardless of the parent's centering —
+       the 24px left/right padding above (matching .wrap's own padding)
+       then insets the thumbnails back to the same margin as the rest of
+       the page content, so the scroller's default resting position lines
+       up symmetrically instead of sitting flush against the screen edges. */
+    width: 100vw;
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
   }
+  /* forces WebKit/iOS Safari to actually honor the right-side padding
+     once the strip is scrolled all the way to its end */
+  .photo-banner::after{ content: ''; flex: 0 0 auto; padding-right: 0.1px; }
   .photo-banner:not(.fits){ justify-content: flex-start; }
   .photo-banner::-webkit-scrollbar{ display: none; } /* Chrome/Safari */
   .photo-banner img{
     width: 56px; height: 56px;
     flex: 0 0 auto;
+    margin: 0;
     object-fit: cover;
     border-radius: 10px;
     cursor: pointer;
@@ -450,6 +465,26 @@
   .photo-banner img:hover{
     transform: translateY(-3px);
     box-shadow: 0 10px 18px -10px rgba(31,58,61,0.4);
+  }
+
+  /* The desktop full-bleed trick above uses 100vw, but on mobile 100vw
+     doesn't reliably match the true visible viewport width (scrollbar
+     gutters, momentum-scroll rounding, etc.), which throws the centering
+     off by a few px and makes the left/right edges uneven. On mobile
+     .wrap already spans the full device width on its own (its max-width
+     doesn't kick in below ~1008px), so instead of guessing at vw we
+     cancel out .wrap's own padding exactly — 24px is a known, fixed
+     value, so this bleeds to the true screen edges with no rounding
+     error either side. This must come after the base .photo-banner rule
+     above so it wins the cascade on mobile (a later unconditional rule
+     would otherwise beat an earlier media-query rule of equal
+     specificity). */
+  @media (max-width: 700px){
+    .photo-banner{
+      width: auto;
+      margin-left: -24px;
+      margin-right: -24px;
+    }
   }
 
 
@@ -844,8 +879,13 @@
 
     bannerSetWidth = afterSet1[0].offsetLeft - realImgs[0].offsetLeft;
 
-    // start scrolled to the middle (real) copy
-    photoBanner.scrollLeft = realImgs[0].offsetLeft;
+    // start scrolled to the middle (real) copy — offsetLeft already
+    // includes the container's left padding, so back it out here or the
+    // default resting position would scroll straight past that padding
+    // and leave the first thumbnail flush against the left edge instead
+    // of matching the same inset as the right side.
+    const bannerPaddingLeft = parseFloat(getComputedStyle(photoBanner).paddingLeft) || 0;
+    photoBanner.scrollLeft = realImgs[0].offsetLeft - bannerPaddingLeft;
 
     bannerScrollHandler = () => {
       if (bannerScrollEndTimer) clearTimeout(bannerScrollEndTimer);
@@ -870,6 +910,22 @@
 
   updateBannerAlignment();
   window.addEventListener('resize', updateBannerAlignment);
+  // Safety net: the very first measurement above can race page load (fonts
+  // swapping in, layout still settling), and if it wrongly concludes the
+  // row doesn't fit, that "not fits" verdict never gets revisited — leaving
+  // the thumbnails packed to the left with all the slack bunched on the
+  // right instead of centered. A ResizeObserver re-checks any time the
+  // banner's actual rendered size changes for any reason, so a bad early
+  // read self-corrects instead of sticking permanently.
+  if (window.ResizeObserver && photoBanner){
+    let bannerResizeTimer = null;
+    new ResizeObserver(() => {
+      if (bannerResizeTimer) clearTimeout(bannerResizeTimer);
+      bannerResizeTimer = setTimeout(updateBannerAlignment, 50);
+    }).observe(photoBanner);
+  } else {
+    window.addEventListener('load', updateBannerAlignment);
+  }
 
   document.querySelectorAll('.photo-banner img').forEach(thumb => {
     thumb.addEventListener('click', () => {
