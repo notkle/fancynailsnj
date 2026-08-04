@@ -368,23 +368,10 @@
     from{ opacity: 0; }
     to{ opacity: 1; }
   }
-  @media (prefers-reduced-motion: reduce){
-    section.panel.active{ animation: simpleFadeIn 0.5s ease-out; }
-    .blob-1, .blob-2{ animation: none; }
-    .hero,
-    .hero .welcome,
-    .hero h1,
-    .hero .lede,
-    .hero.intro,
-    .hero.intro .welcome,
-    .hero.intro h1,
-    .hero.intro .lede,
-    .hero.intro .hero-cta{ animation: none; opacity: 1; }
-    .page-banner,
-    .page-banner h1,
-    .page-banner.intro,
-    .page-banner.intro h1{ animation: none; opacity: 1; }
-  }
+  /* Note: the hero/page-banner intro (heroCardIn/heroItemIn) and the
+     simpleFadeIn panel transition intentionally play regardless of the
+     visitor's prefers-reduced-motion setting — this is a deliberate
+     choice to always show the intro animation, not an oversight. */
 
   /* welcome header styling */
   .welcome{
@@ -963,7 +950,9 @@
   // with a GPU-accelerated transform (via a --parallax-y custom property),
   // scaled by how far the banner has scrolled through the viewport.
   const parallaxEls = Array.from(document.querySelectorAll('.hero, .page-banner'));
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Deliberately not gating this on prefers-reduced-motion — the intro
+  // animation and parallax are meant to always play, see the CSS comment
+  // near the (removed) reduced-motion override above.
   let parallaxTicking = false;
 
   function applyParallax(){
@@ -985,14 +974,14 @@
   }
 
   function updateParallax(){
-    if (prefersReducedMotion || !parallaxEls.length) return;
+    if (!parallaxEls.length) return;
     if (!parallaxTicking){
       requestAnimationFrame(applyParallax);
       parallaxTicking = true;
     }
   }
 
-  if (!prefersReducedMotion && parallaxEls.length){
+  if (parallaxEls.length){
     window.addEventListener('scroll', updateParallax, { passive: true });
     window.addEventListener('resize', updateParallax);
     updateParallax();
