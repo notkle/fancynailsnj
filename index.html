@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#F6FBF9">
-<title>Fancy Nails</title>
+<title>Fancy Nails &amp; Spa</title>
 
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;1,500&family=Work+Sans:wght@400;500;600&display=swap');
@@ -63,14 +63,7 @@
   .logo-block{ line-height: 1.1; }
   .logo{ font-family: 'Fraunces', serif; font-style: italic; font-size: 1.4rem; color: var(--seafoam-ink); }
   .logo span{ color: var(--coral); }
-  .logo-location{
-    display: block;
-    font-family: 'Work Sans', sans-serif;
-    font-size: 0.72rem;
-    letter-spacing: 0.04em;
-    color: var(--ink-faint);
-    margin-top: 2px;
-  }
+  .logo .logo-amp{ color: var(--seafoam-ink); white-space: nowrap; }
   nav{ display: flex; gap: 8px; }
   nav button{
     font-family: 'Work Sans', sans-serif;
@@ -330,9 +323,12 @@
 
   .info-block{ margin-bottom: 28px; }
   .info-block h4{ font-size: 0.78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); margin: 0 0 8px; }
+  .menu-subhead{ font-size: 0.78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--ink-faint); margin: 18px 0 4px; font-weight: 600; }
+  .menu-subhead:first-of-type{ margin-top: 4px; }
   .address-note{ font-size: 0.82rem; color: var(--ink-faint); margin-top: 6px; }
 
   footer{ border-top: 1px solid var(--line); padding: 30px 0; text-align: center; font-size: 0.85rem; color: var(--ink-faint); }
+  .footer-location{ display: inline-block; margin-top: 6px; font-size: 0.78rem; letter-spacing: 0.02em; color: var(--ink-faint); }
 
   /* ambient background life — slow drifting color blobs, always moving */
   .blob-field{
@@ -393,6 +389,12 @@
     .contact-grid{ grid-template-columns: 1fr; }
     nav{ gap: 2px; }
     nav button{ padding: 8px 10px; font-size: 0.85rem; }
+
+    /* logo: "& spa" stays inline after "nails" on phone widths too, and
+       matches the rest of the logo in color/font/size since it now just
+       inherits from .logo instead of being styled separately */
+    header .wrap{ padding: 12px 16px; gap: 10px; }
+    .logo{ font-size: 1.1rem; }
 
     /* header image banners (hero + inner-page banners): halve the
        top/bottom gap around them on mobile */
@@ -516,8 +518,7 @@
 <header>
   <div class="wrap">
     <div class="logo-block">
-      <span class="logo">fancy<span>.</span>nails</span>
-      <span class="logo-location">Hillsborough, NJ</span>
+      <span class="logo">fancy<span>.</span>nails <span class="logo-amp">&amp; spa</span></span>
     </div>
     <nav>
       <button data-tab="home" class="active">Home</button>
@@ -532,9 +533,9 @@
   <!-- HOME -->
   <section id="home" class="panel active">
     <div class="hero intro">
-      <p class="welcome" >Welcome to Fancy Nails, how may we help you?</p>
+      <p class="welcome" >Welcome to Fancy Nails &amp; Spa, how may we help you?</p>
       <h1  >Exhale. Then polish.</h1>
-      <p class="lede" >Fancy Nails is a calm, considered nail salon — manicures, pedicures, and enhancements, done properly and without the rush.</p>
+      <p class="lede" >Fancy Nails &amp; Spa is a calm, considered nail salon — manicures, pedicures, and enhancements, done properly and without the rush.</p>
       <div class="hero-cta">
         <button class="btn btn-primary" onclick="showTab('contact')">Book an appointment</button>
         <button class="btn" style="background:none;color:var(--ink-soft);" onclick="showTab('prices')">See prices</button>
@@ -581,30 +582,84 @@
     </div>
 
     <div class="menu-block">
-      <h2  >Manicures</h2>
-      <div class="menu-item" ><span><span class="menu-item-name">Classic Manicure</span><span class="menu-item-desc">Soak, shape, cuticle care, polish</span></span><span class="menu-item-price">$32</span></div>
-      <div class="menu-item" ><span><span class="menu-item-name">Gel Manicure</span><span class="menu-item-desc">Classic manicure with long-wear gel</span></span><span class="menu-item-price">$48</span></div>
-      <div class="menu-item" ><span><span class="menu-item-name">Kids Manicure</span><span class="menu-item-desc">Age 10 &amp; under</span></span><span class="menu-item-price">$20</span></div>
+      <h2  >Dip Powder</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">Full Set</span></span><span class="menu-item-price">$65</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">French</span></span><span class="menu-item-price">$53</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Chrome</span></span><span class="menu-item-price">$55</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Overlay</span></span><span class="menu-item-price">$45</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Cat Eyes</span></span><span class="menu-item-price">$60</span></div>
     </div>
 
     <div class="menu-block">
-      <h2  >Pedicures</h2>
-      <div class="menu-item" ><span><span class="menu-item-name">Classic Pedicure</span><span class="menu-item-desc">Soak, shape, callus care, polish</span></span><span class="menu-item-price">$42</span></div>
-      <div class="menu-item" ><span><span class="menu-item-name">Gel Pedicure</span><span class="menu-item-desc">Classic pedicure with long-wear gel</span></span><span class="menu-item-price">$58</span></div>
+      <h2  >Gel-X</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">Full Set</span></span><span class="menu-item-price">$70</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Refill</span></span><span class="menu-item-price">$55</span></div>
     </div>
 
     <div class="menu-block">
-      <h2  >Enhancements</h2>
-      <div class="menu-item" ><span><span class="menu-item-name">Gel-X Extensions</span><span class="menu-item-desc">Full set</span></span><span class="menu-item-price">$75</span></div>
-      <div class="menu-item" ><span><span class="menu-item-name">Acrylic Full Set</span><span class="menu-item-desc">Your choice of length</span></span><span class="menu-item-price">$70</span></div>
-      <div class="menu-item" ><span><span class="menu-item-name">Fill</span><span class="menu-item-desc">Acrylic or gel-x, 2–3 weeks out</span></span><span class="menu-item-price">$45</span></div>
+      <h2  >Builder Gel</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">Full Set</span></span><span class="menu-item-price">$70</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Refill</span></span><span class="menu-item-price">$55</span></div>
     </div>
 
     <div class="menu-block">
-      <h2  >Add-ons</h2>
-      <div class="menu-item" ><span><span class="menu-item-name">Nail Art (per hand)</span></span><span class="menu-item-price">$5+</span></div>
-      <div class="menu-item" ><span><span class="menu-item-name">French Tip</span></span><span class="menu-item-price">$8</span></div>
-      <div class="menu-item" ><span><span class="menu-item-name">Paraffin Dip</span></span><span class="menu-item-price">$12</span></div>
+      <h2  >Gel Polish</h2>
+      <div class="menu-subhead">Manicure</div>
+      <div class="menu-item" ><span><span class="menu-item-name">Manicure</span></span><span class="menu-item-price">$35</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">French</span></span><span class="menu-item-price">$42</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Cat Eyes</span></span><span class="menu-item-price">$47</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Chrome</span></span><span class="menu-item-price">$45</span></div>
+      <div class="menu-subhead">Pedicure</div>
+      <div class="menu-item" ><span><span class="menu-item-name">Pedicure</span><span class="menu-item-desc">Full classic service with long-wear gel, warm paraffin, and hot stone finish &mdash; 45 min&ndash;1 hr</span></span><span class="menu-item-price">$52</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">French</span></span><span class="menu-item-price">$59</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Cat Eyes</span></span><span class="menu-item-price">$65</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Chrome</span></span><span class="menu-item-price">$62</span></div>
+    </div>
+
+    <div class="menu-block">
+      <h2  >Classic Manicure</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">Hang</span></span><span class="menu-item-price">$20</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Pedicure</span><span class="menu-item-desc">Cuticle care, callus clean up, exfoliation, leg &amp; foot massage, hot stone &mdash; 30 min</span></span><span class="menu-item-price">$35</span></div>
+    </div>
+
+    <div class="menu-block">
+      <h2  >Spa Pedicure</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">Spa Pedicure</span><span class="menu-item-desc">Mineral soak, hot towel mask, sugar scrub exfoliation, extra leg &amp; foot massage, hot stone &mdash; 1 hr</span></span><span class="menu-item-price">$58</span></div>
+    </div>
+
+    <div class="menu-block">
+      <h2  >Polish Change</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">Hangs</span></span><span class="menu-item-price">$12</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Feet</span></span><span class="menu-item-price">$25</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Gel Hangs</span></span><span class="menu-item-price">$35</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Gel Feet</span></span><span class="menu-item-price">$35</span></div>
+    </div>
+
+    <div class="menu-block">
+      <h2  >Soak Off</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">No Service</span></span><span class="menu-item-price">$15</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">With Service</span></span><span class="menu-item-price">No Charge</span></div>
+    </div>
+
+    <div class="menu-block">
+      <h2  >Waxing</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">Eye Brow</span></span><span class="menu-item-price">$12</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Lip</span></span><span class="menu-item-price">$10</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Chin</span></span><span class="menu-item-price">$10</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Face</span></span><span class="menu-item-price">$40</span></div>
+    </div>
+
+    <div class="menu-block">
+      <h2  >Designs</h2>
+      <div class="menu-item" ><span><span class="menu-item-name">French</span></span><span class="menu-item-price">$7</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Cat Eyes</span></span><span class="menu-item-price">$15</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">Chrome</span></span><span class="menu-item-price">$10</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">2 Nails Line Design</span></span><span class="menu-item-price">$7</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">10 Nails Line Design</span></span><span class="menu-item-price">$15</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">2 Nails Flowers</span></span><span class="menu-item-price">$10</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">10 Nails Flowers</span></span><span class="menu-item-price">$25</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">2 Nails Multiple Colors</span></span><span class="menu-item-price">$15</span></div>
+      <div class="menu-item" ><span><span class="menu-item-name">10 Nails Multiple Colors</span></span><span class="menu-item-price">$40</span></div>
     </div>
   </section>
 
@@ -616,7 +671,7 @@
     <div style="max-width: 420px;">
       <div class="info-block">
         <h4  >Address</h4>
-        <p  ><a href="https://maps.google.com/maps?vet=10CAAQoqAOahcKEwj4uPy66P-VAxUAAAAAHQAAAAAQGQ..i&client=firefox-b-1-d&pvq=CgsvZy8xdGZmOGtjMCIRCgtmYW5jeSBuYWlscxACGAM&lqi=Cg5mYW5jeSBuYWlscyBuakjgitHW5YCAgAhaGhAAEAEYABgBGAIiDmZhbmN5IG5haWxzIG5qkgEKbmFpbF9zYWxvbuABAA&fvr=1&cs=1&um=1&ie=UTF-8&fb=1&gl=us&sa=X&ftid=0x89c3ebd245d0c429:0xa22a6a4bfe8f4dc7" target="_blank" rel="noopener">Fancy Nails<br>649 Route 206, Suite [Your Unit #]<br>Hillsborough Township, NJ 08844</a></p>
+        <p  ><a href="https://maps.google.com/maps?vet=10CAAQoqAOahcKEwj4uPy66P-VAxUAAAAAHQAAAAAQGQ..i&client=firefox-b-1-d&pvq=CgsvZy8xdGZmOGtjMCIRCgtmYW5jeSBuYWlscxACGAM&lqi=Cg5mYW5jeSBuYWlscyBuakjgitHW5YCAgAhaGhAAEAEYABgBGAIiDmZhbmN5IG5haWxzIG5qkgEKbmFpbF9zYWxvbuABAA&fvr=1&cs=1&um=1&ie=UTF-8&fb=1&gl=us&sa=X&ftid=0x89c3ebd245d0c429:0xa22a6a4bfe8f4dc7" target="_blank" rel="noopener">Fancy Nails &amp; Spa<br>649 Route 206, Suite [Your Unit #]<br>Hillsborough Township, NJ 08844</a></p>
         <p class="address-note">Location: Located in Hillsborough Center (on Route 206 North, near Starbucks &amp; Chipotle, directly in front of The Franklin at Hillsborough apartments).</p>
       </div>
       <div class="info-block">
@@ -640,7 +695,7 @@
 
 </div>
 
-<footer>© 2026 Fancy Nails</footer>
+<footer>© 2026 Fancy Nails &amp; Spa<br><span class="footer-location">Hillsborough, NJ 08844</span></footer>
 <div class="lightbox" id="lightbox">
   <img id="lightbox-img" src="" alt="Enlarged nail photo">
 </div>
